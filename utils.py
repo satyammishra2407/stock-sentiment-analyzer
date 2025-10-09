@@ -1,4 +1,4 @@
-# utils.py
+# utils.py - UPDATED VERSION
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -52,20 +52,12 @@ def get_expert_analysis(company_name):
     }
     return analysis_data.get(company_name, default)
 
+# YEH FUNCTION UPDATE KARO - Plotly compatible
 def save_sentiment_plot(counts, filename="sentiment_graph.png", title="Sentiment"):
-    """Save bar chart for sentiment counts using matplotlib."""
-    plt.close("all")
-    fig, ax = plt.subplots(figsize=(6,3))
-    counts = counts.sort_values(ascending=False)
-    counts.plot(kind="bar", ax=ax)
-    ax.set_title(title)
-    ax.set_ylabel("Count")
-    ax.set_xlabel("")
-    ax.set_xticklabels([str(x) for x in counts.index], rotation=0)
-    fig.tight_layout()
-    fig.savefig(filename)
-    plt.close(fig)
-    return os.path.abspath(filename)
+    """Updated function that returns None since we're using Plotly directly"""
+    # Ab hum Plotly use kar rahe hain, isliye yeh function kuch nahi karega
+    # Par existing code break nahi hoga
+    return None
 
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)

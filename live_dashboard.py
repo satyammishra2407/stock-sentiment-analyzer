@@ -1,4 +1,4 @@
-# live_dashboard.py
+# live_dashboard.py - CLEANED VERSION
 import streamlit as st
 from utils import get_stock_data
 import yfinance as yf
@@ -97,22 +97,7 @@ def show_page(company=None, bearer_tokens=None, max_requests=None):
     
     st.divider()
     
-    # 1. Financial Metrics - SABSE UPAR
-    st.subheader("📊 Financial Metrics")
-    metrics_cols = st.columns(4)
-    
-    with metrics_cols[0]:
-        st.metric("Revenue", "3.62M", "-137.96%", delta_color="inverse")
-    with metrics_cols[1]:
-        st.metric("Gross Profit", "1.48M", "-213.4%", delta_color="inverse")
-    with metrics_cols[2]:
-        st.metric("Net Profit", "0.57M", "-263.16%", delta_color="inverse")
-    with metrics_cols[3]:
-        st.metric("Sentiment Score", "72%", "+8%")
-    
-    st.divider()
-    
-    # 2. Stock Chart - Financial Metrics ke baad
+    # 🚀 DIRECTLY STOCK CHART - Fake metrics removed
     st.subheader("Stock Chart")
     
     # Session state mein selected period store karo
@@ -143,28 +128,24 @@ def show_page(company=None, bearer_tokens=None, max_requests=None):
     
     st.divider()
     
-    # 3. NSE Label + Time Period Buttons - NSE ke right side mein
-    nse_col1, nse_col2 = st.columns([1, 3])
+    # Time Period Selection
+    st.subheader("Time Period")
     
-    with nse_col1:
-        st.subheader("NSE")
+    # Time period buttons - Center mein
+    time_periods = ["1D", "1W", "1M", "3M", "6M", "1Y", "3Y", "5Y", "ALL"]
     
-    with nse_col2:
-        # Time period buttons - NSE ke right side mein
-        time_periods = ["1D", "1W", "1M", "3M", "6M", "1Y", "3Y", "5Y", "ALL"]
-        
-        # Buttons row banaye
-        cols = st.columns(len(time_periods))
-        
-        for i, period in enumerate(time_periods):
-            with cols[i]:
-                if st.button(period, use_container_width=True, key=f"period_{period}"):
-                    st.session_state.selected_period = period
-                    st.rerun()
+    # Buttons row banaye
+    cols = st.columns(len(time_periods))
+    
+    for i, period in enumerate(time_periods):
+        with cols[i]:
+            if st.button(period, use_container_width=True, key=f"period_{period}"):
+                st.session_state.selected_period = period
+                st.rerun()
     
     st.divider()
     
-    # 4. Chart Statistics - NSE ke niche
+    # Chart Statistics - Time period ke niche
     st.subheader("Chart Statistics")
     
     if hist_data is not None and not hist_data.empty:
@@ -186,7 +167,7 @@ def show_page(company=None, bearer_tokens=None, max_requests=None):
     
     st.divider()
     
-    # 5. Performance Summary - SABSE NICHE
+    # Performance Summary - SABSE NICHE
     st.subheader("📈 Performance Summary")
     
     # Performance stats agar data available hai toh
