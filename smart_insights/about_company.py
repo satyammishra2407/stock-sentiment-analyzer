@@ -1,5 +1,34 @@
 # smart_insights/about_company.py
 import streamlit as st
+import yfinance as yf
+
+@st.cache_data(ttl=300)
+def fetch_company_profile(symbol):
+    """Fetch company profile from yfinance with safe fallbacks.
+    Returns a dict with keys: name, sector, industry, website, employees, summary
+    """
+    try:
+        ticker_symbol = symbol if '.' in symbol else f"{symbol}.NS"
+        t = yf.Ticker(ticker_symbol)
+        info = getattr(t, 'info', None) or {}
+        profile = {
+            'name': info.get('longName') or info.get('shortName') or symbol,
+            'sector': info.get('sector'),
+            'industry': info.get('industry'),
+            'website': info.get('website'),
+            'employees': info.get('fullTimeEmployees'),
+            'summary': info.get('longBusinessSummary')
+        }
+        return profile
+    except Exception:
+        return {
+            'name': symbol,
+            'sector': None,
+            'industry': None,
+            'website': None,
+            'employees': None,
+            'summary': None
+        }
 
 def show_page(company=None, bearer_tokens=None, max_requests=None):
     st.subheader("🏢 About Company")
@@ -8,23 +37,23 @@ def show_page(company=None, bearer_tokens=None, max_requests=None):
         st.warning("Please select a company from sidebar")
         return
     
-    # Simple company descriptions only
-    company_data = {
-        "TCS": "Tata Consultancy Services - India's largest IT company providing software and consulting services globally.",
-        "INFY": "Infosys Limited - Global leader in digital services and consulting, enabling clients in 50+ countries.",
-        "RELIANCE": "Reliance Industries - India's largest private sector company with businesses in energy, retail and telecom.",
-        "HDFCBANK": "HDFC Bank - Leading private sector bank in India with strong digital banking services.",
-        "SBIN": "State Bank of India - India's largest public sector bank with extensive branch network nationwide.",
-        "WIPRO": "Wipro Limited - Global IT services company known for digital transformation and consulting.",
-        "HINDUNILVR": "Hindustan Unilever - India's largest FMCG company with popular household brands.",
-        "ITC": "ITC Limited - Diversified company with businesses in FMCG, hotels, paperboards and agri-business.",
-        "BAJFINANCE": "Bajaj Finance - Leading non-banking financial company in India offering various loans.",
-        "BHARTIARTL": "Bharti Airtel - One of India's largest telecommunications services companies.",
-    }
-    
-    if company in company_data:
-        st.success(f"**{company}**")
-        st.write(company_data[company])
-    else:
-        st.error(f"Company '{company}' not found")
-        st.info("Try: TCS, INFY, RELIANCE, HDFCBANK, SBIN, WIPRO")
+    with st.spinner("Fetching company profile..."):
+        profile = fetch_company_profile(company)
+
+    st.success(profile.get('name') or company)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Sector", profile.get('sector') or "N/A")
+    with col2:
+        st.metric("Industry", profile.get('industry') or "N/A")
+    with col3:
+        employees = profile.get('employees')
+        st.metric("Employees", f"{employees:,}" if isinstance(employees, int) else "N/A")
+
+    if profile.get('website'):
+        st.markdown(f"Website: [{profile['website']}]({profile['website']})")
+
+    st.markdown("---")
+    st.subheader("Overview")
+    st.write(profile.get('summary') or "No description available right now.")

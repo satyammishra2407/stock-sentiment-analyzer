@@ -2,6 +2,45 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import yfinance as yf
+
+@st.cache_data(ttl=30)
+def fetch_index_quote(ticker_symbol):
+    """Fetch current index price and change using yfinance, cached briefly.
+    Returns dict: {price, change, pct} or None on failure.
+    """
+    try:
+        ticker = yf.Ticker(ticker_symbol)
+        current_price = None
+        previous_close = None
+
+        # Try fast_info first (quick and lightweight)
+        fast = getattr(ticker, "fast_info", None)
+        if fast:
+            current_price = fast.get("last_price") or fast.get("lastPrice")
+            previous_close = fast.get("previous_close") or fast.get("previousClose")
+
+        # Fallback to recent history
+        if current_price is None or previous_close is None:
+            hist = ticker.history(period="5d")
+            if hist is None or hist.empty:
+                return None
+            current_price = float(hist["Close"].iloc[-1])
+            previous_close = float(hist["Close"].iloc[-2]) if len(hist) >= 2 else current_price
+
+        change = current_price - previous_close
+        pct = (change / previous_close * 100) if previous_close else 0.0
+        return {"price": current_price, "change": change, "pct": pct}
+    except Exception:
+        return None
+
+def format_metric(value, change, pct, currency_symbol=""):
+    try:
+        price_str = f"{currency_symbol}{value:,.2f}" if currency_symbol else f"{value:,.2f}"
+        delta_str = f"{change:+.2f} ({pct:+.2f}%)"
+        return price_str, delta_str
+    except Exception:
+        return "N/A", "N/A"
 
 def show_page(company=None, bearer_tokens=None, max_requests=None):
     # Custom CSS for compact styling
@@ -164,23 +203,67 @@ def show_page(company=None, bearer_tokens=None, max_requests=None):
     with tab1:
         st.markdown('<div class="animated-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
+        # Live Indian indices (NSE)
+        indices_in = {
+            "Nifty 50": "^NSEI",
+            "Sensex": "^BSESN",
+            "Bank Nifty": "^NSEBANK",
+        }
+        quotes_in = {name: fetch_index_quote(sym) for name, sym in indices_in.items()}
         with col1:
-            st.metric("Nifty 50", "22,475", "+125.30")
+            q = quotes_in["Nifty 50"]
+            if q:
+                price, delta = format_metric(q["price"], q["change"], q["pct"], "₹")
+                st.metric("Nifty 50", price, delta)
+            else:
+                st.metric("Nifty 50", "N/A", "N/A")
         with col2:
-            st.metric("Sensex", "74,125", "+350.45")
+            q = quotes_in["Sensex"]
+            if q:
+                price, delta = format_metric(q["price"], q["change"], q["pct"], "₹")
+                st.metric("Sensex", price, delta)
+            else:
+                st.metric("Sensex", "N/A", "N/A")
         with col3:
-            st.metric("Bank Nifty", "48,231", "+85.75")
+            q = quotes_in["Bank Nifty"]
+            if q:
+                price, delta = format_metric(q["price"], q["change"], q["pct"], "₹")
+                st.metric("Bank Nifty", price, delta)
+            else:
+                st.metric("Bank Nifty", "N/A", "N/A")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
         st.markdown('<div class="animated-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
+        # Live Global indices (US)
+        indices_us = {
+            "S&P 500": "^GSPC",
+            "Dow Jones": "^DJI",
+            "Nasdaq": "^IXIC",
+        }
+        quotes_us = {name: fetch_index_quote(sym) for name, sym in indices_us.items()}
         with col1:
-            st.metric("S&P 500", "5,235", "+25.45")
+            q = quotes_us["S&P 500"]
+            if q:
+                price, delta = format_metric(q["price"], q["change"], q["pct"], "$")
+                st.metric("S&P 500", price, delta)
+            else:
+                st.metric("S&P 500", "N/A", "N/A")
         with col2:
-            st.metric("Dow Jones", "39,125", "+150.30")
+            q = quotes_us["Dow Jones"]
+            if q:
+                price, delta = format_metric(q["price"], q["change"], q["pct"], "$")
+                st.metric("Dow Jones", price, delta)
+            else:
+                st.metric("Dow Jones", "N/A", "N/A")
         with col3:
-            st.metric("Nasdaq", "16,385", "+85.75")
+            q = quotes_us["Nasdaq"]
+            if q:
+                price, delta = format_metric(q["price"], q["change"], q["pct"], "$")
+                st.metric("Nasdaq", price, delta)
+            else:
+                st.metric("Nasdaq", "N/A", "N/A")
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("---")
